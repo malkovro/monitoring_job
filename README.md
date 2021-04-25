@@ -5,23 +5,42 @@
 Build an executable to read the Temp & Humidity from a DHT22 and push it over to an API.
 
 ## Build it
+
+```bash
 $ docker build . -t mj_compiler
 $ docker run -v $(pwd):/app mj_compiler
+```
 
-The executable will be: ./app
+The executable will be: ./station
 
 ## To use it
 
 Copy it on the pi:
 
 ```bash
-$ scp app pi@the_pi_ip:
+$ scp ./station pi@the_pi_ip:/your/path/within/the/pi
 ```
+
+Create a symbolic link of the station executable or add its location to the PATH:
+```bash
+$ sudo ln -s /home/leo/station /usr/local/bin/station
+```
+
+### Temperature and Humidity Reading:
 
 On a pi, plug the DHT22 onthe GPIO 4 and launch the executable:
 
 ```
-$ sudo ./app -monitoringBaseUrl https://your_monitoring_api.com
+$ sudo station send climate -u https://your_monitoring_api.com
+```
+
+### Light Switch
+
+Plug the relay board (HW 316) to the pi (use the 5V VCC of the pi even though you should be using an external power source with more mA...) and the relay input onto the GPIO 17.
+
+```
+$ sudo station switch light --on
+$ sudo station switch light --on=false
 ```
 
 ## To schedule it
@@ -75,8 +94,20 @@ $ jobber init
 Edit the jobber conf adding a job of the like:
 ```.jobber
   MonitoringReading:
-    cmd: sudo /home/leo/app -monitoringBaseUrl=https://monitoring-api.04plastic.com
-    time: 0 */30
+    cmd: sudo station send climate -u https://monitoring-api.04plastic.com
+    time: 0 */30 * * *
+    onError: Continue
+```
+
+Add another set of jobs to switch the light on and off:
+```.jobber
+  TurnLightOn:
+    cmd: sudo station switch light --on
+    time: 0 0 6 * * *
+    onError: Continue
+  TurnLighOff:
+    cmd: sudo station switch light --on=false
+    time: 0 0 19 * * *
     onError: Continue
 ```
 
