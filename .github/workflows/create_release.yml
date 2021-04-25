@@ -1,0 +1,22 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Build Artifact
+        run: |
+          docker build -t mj_compiler .
+          docker run -v $(pwd):/app mj_compiler
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files:
+            - station
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
